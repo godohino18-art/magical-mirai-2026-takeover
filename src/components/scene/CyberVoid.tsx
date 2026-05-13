@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { EffectComposer } from "@react-three/postprocessing";
+import { EffectComposer, DepthOfField } from "@react-three/postprocessing";
 import { Environment } from "@react-three/drei";
 import {
   BloomEffect,
@@ -63,7 +63,7 @@ function DynamicEffects({ amplitude, isChorus }: DynamicEffectsProps) {
 
     const targetCA = isChorus
       ? CHROMATIC_OFFSET * CHORUS_CHROMATIC_MULTIPLIER
-      : CHROMATIC_OFFSET + amplitude * 0.008;
+      : CHROMATIC_OFFSET + amplitude * 0.002;
     const caLerp = 1 - Math.exp(-5 * delta);
     chromaticEffect.offset.x = MathUtils.lerp(chromaticEffect.offset.x, targetCA, caLerp);
     chromaticEffect.offset.y = MathUtils.lerp(
@@ -75,6 +75,8 @@ function DynamicEffects({ amplitude, isChorus }: DynamicEffectsProps) {
 
   return (
     <EffectComposer>
+      {/* DoF: focus on lyric position [0, 0.5, 2], blur glass objects and particles */}
+      <DepthOfField target={[0, 0.5, 2]} focalLength={0.025} bokehScale={3} />
       <primitive object={bloomEffect} dispose={null} />
       <primitive object={chromaticEffect} dispose={null} />
       <primitive object={vignetteEffect} dispose={null} />
@@ -105,32 +107,32 @@ export default function CyberVoid({
   useFrame((_, delta) => {
     const lerpSpeed = 1 - Math.exp(-2 * delta);
 
-    // Upper point light: cool blue → warm amber
+    // Upper light: teal-aqua (Miku) → warm amber (chorus)
     if (upperLightRef.current) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const ul = upperLightRef.current as any;
-      ul.color.r = MathUtils.lerp(ul.color.r, isChorus ? 1.0  : 0.25, lerpSpeed);
-      ul.color.g = MathUtils.lerp(ul.color.g, isChorus ? 0.65 : 0.5,  lerpSpeed);
-      ul.color.b = MathUtils.lerp(ul.color.b, isChorus ? 0.18 : 1.0,  lerpSpeed);
+      ul.color.r = MathUtils.lerp(ul.color.r, isChorus ? 1.0  : 0.12, lerpSpeed);
+      ul.color.g = MathUtils.lerp(ul.color.g, isChorus ? 0.65 : 0.72, lerpSpeed);
+      ul.color.b = MathUtils.lerp(ul.color.b, isChorus ? 0.18 : 0.70, lerpSpeed);
       ul.intensity = 2 + amplitude * 4 + beat * 2;
     }
 
-    // Lower point light: cyan → warm orange
+    // Lower light: Miku green → warm orange
     if (lowerLightRef.current) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const ll = lowerLightRef.current as any;
-      ll.color.r = MathUtils.lerp(ll.color.r, isChorus ? 1.0  : 0.0,  lerpSpeed);
-      ll.color.g = MathUtils.lerp(ll.color.g, isChorus ? 0.53 : 0.81, lerpSpeed);
-      ll.color.b = MathUtils.lerp(ll.color.b, isChorus ? 0.0  : 1.0,  lerpSpeed);
+      ll.color.r = MathUtils.lerp(ll.color.r, isChorus ? 1.0  : 0.15, lerpSpeed);
+      ll.color.g = MathUtils.lerp(ll.color.g, isChorus ? 0.53 : 0.77, lerpSpeed);
+      ll.color.b = MathUtils.lerp(ll.color.b, isChorus ? 0.0  : 0.73, lerpSpeed);
     }
 
-    // Ambient: dark blue → dark amber
+    // Ambient: dark Miku-teal → dark amber
     if (ambientRef.current) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const al = ambientRef.current as any;
-      al.color.r = MathUtils.lerp(al.color.r, isChorus ? 0.18 : 0.04, lerpSpeed * 0.5);
-      al.color.g = MathUtils.lerp(al.color.g, isChorus ? 0.12 : 0.06, lerpSpeed * 0.5);
-      al.color.b = MathUtils.lerp(al.color.b, isChorus ? 0.02 : 0.19, lerpSpeed * 0.5);
+      al.color.r = MathUtils.lerp(al.color.r, isChorus ? 0.18 : 0.02, lerpSpeed * 0.4);
+      al.color.g = MathUtils.lerp(al.color.g, isChorus ? 0.12 : 0.10, lerpSpeed * 0.4);
+      al.color.b = MathUtils.lerp(al.color.b, isChorus ? 0.02 : 0.07, lerpSpeed * 0.4);
     }
   });
 
@@ -138,21 +140,22 @@ export default function CyberVoid({
     <>
       <CameraRig introComplete={introComplete} />
 
-      {/* Environment map for glass reflections */}
+      {/* HDR environment for glass refraction/reflection */}
       <Environment preset="city" background={false} />
 
-      <ambientLight ref={ambientRef} intensity={0.15} color="#0a1030" />
+      {/* Dark Miku-teal ambient base */}
+      <ambientLight ref={ambientRef} intensity={0.18} color="#061a12" />
       <pointLight
         ref={upperLightRef}
         position={[0, 10, 0]}
         intensity={2}
-        color="#4080ff"
+        color="#20b8a0"
       />
       <pointLight
         ref={lowerLightRef}
         position={[0, -5, 0]}
         intensity={0.5 + beat * 2}
-        color="#00cfff"
+        color="#39c5bb"
       />
 
       <InfiniteGrid amplitude={amplitude} beat={beat} isChorus={isChorus} />

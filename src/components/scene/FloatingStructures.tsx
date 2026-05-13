@@ -83,10 +83,10 @@ function Structure({
 
   const geometry = useMemo(() => {
     switch (shapeIndex % 4) {
-      case 0: return <octahedronGeometry args={[1, 2]} />;
-      case 1: return <icosahedronGeometry args={[1, 1]} />;
-      case 2: return <torusGeometry args={[0.8, 0.25, 8, 20]} />;
-      default: return <tetrahedronGeometry args={[1, 2]} />;
+      case 0: return <octahedronGeometry args={[1, 3]} />;
+      case 1: return <icosahedronGeometry args={[1, 2]} />;
+      case 2: return <torusGeometry args={[0.8, 0.3, 32, 64]} />;
+      default: return <tetrahedronGeometry args={[1, 3]} />;
     }
   }, [shapeIndex]);
 

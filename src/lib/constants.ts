@@ -25,7 +25,7 @@ export const BLOOM_THRESHOLD = 0.2;
 export const BLOOM_RADIUS = 0.6;
 export const VIGNETTE_OFFSET = 0.3;
 export const VIGNETTE_DARKNESS = 0.8;
-export const CHROMATIC_OFFSET = 0.003;
+export const CHROMATIC_OFFSET = 0.0008;
 
 // ---- Chorus (TAKEOVER) ----
 export const CHORUS_BLOOM_MULTIPLIER = 3.5;
