@@ -1,5 +1,5 @@
 // ---- TextAlive ----
-export const SONG_URL = "https://piapro.jp/t/a-xJ/20240212210817";
+export const SONG_URL = "https://piapro.jp/t/6W2N";
 
 // ---- Audio Thresholds ----
 export const GLITCH_AMPLITUDE_THRESHOLD = 0.75;
