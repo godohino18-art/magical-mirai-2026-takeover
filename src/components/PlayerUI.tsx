@@ -18,10 +18,10 @@ interface PlayerUIProps {
 
 // ── Loading step copy based on progress ──────────────────────────────────
 function loadingStep(progress: number): string {
-  if (progress < 20) return "ESTABLISHING NEURAL LINK...";
+  if (progress < 20) return "CONNECTING TO PRISM...";
   if (progress < 45) return "LOADING AUDIO ENGINE...";
   if (progress < 70) return "SYNCHRONIZING LYRICS DATA...";
-  return "CALIBRATING BEAT DETECTION...";
+  return "CALIBRATING RESONANCE...";
 }
 
 // ── Blinking cursor ───────────────────────────────────────────────────────
@@ -53,33 +53,33 @@ function LoadingScreen({ progress }: { progress: number }) {
     >
       {/* Title */}
       <div className="text-center">
-        <h1 className="font-mono text-cyan-400 text-3xl font-bold tracking-[0.3em] uppercase">
-          CYBER VOID
+        <h1 className="font-mono text-white/90 text-3xl font-bold tracking-[0.3em] uppercase">
+          PRISM RESONANCE
         </h1>
         <p className="font-mono text-white/30 text-xs tracking-[0.25em] mt-1">
-          TAKEOVER &nbsp;//&nbsp; マジカルミライ 2026
+          KOTAETE &nbsp;//&nbsp; マジカルミライ 2026
         </p>
       </div>
 
       {/* Separator */}
-      <div className="w-72 h-px bg-cyan-400/20" />
+      <div className="w-72 h-px bg-white/15" />
 
       {/* Progress */}
       <div className="w-72 space-y-3">
-        <div className="flex justify-between font-mono text-xs text-cyan-400/50 tracking-widest">
-          <span>INITIALIZING SYSTEM</span>
+        <div className="flex justify-between font-mono text-xs text-white/40 tracking-widest">
+          <span>INITIALIZING</span>
           <span>{progress}%</span>
         </div>
 
         {/* Block-style progress bar */}
-        <div className="font-mono text-sm text-cyan-400 tracking-tight leading-none">
+        <div className="font-mono text-sm text-white/70 tracking-tight leading-none">
           {"▓".repeat(filled)}
-          <span className="text-white/15">{"░".repeat(empty)}</span>
+          <span className="text-white/10">{"░".repeat(empty)}</span>
         </div>
 
         {/* Step label */}
-        <div className="flex items-center gap-1.5 font-mono text-xs text-cyan-300/40 tracking-wider">
-          <span className="text-cyan-400/60">&gt;</span>
+        <div className="flex items-center gap-1.5 font-mono text-xs text-white/35 tracking-wider">
+          <span className="text-white/50">&gt;</span>
           <span>{loadingStep(progress)}</span>
           <Cursor />
         </div>
@@ -101,46 +101,46 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
     >
       {/* Title */}
       <div className="text-center">
-        <h1 className="font-mono text-cyan-400 text-3xl font-bold tracking-[0.3em] uppercase">
-          CYBER VOID
+        <h1 className="font-mono text-white/90 text-3xl font-bold tracking-[0.3em] uppercase">
+          PRISM RESONANCE
         </h1>
         <p className="font-mono text-white/30 text-xs tracking-[0.25em] mt-1">
-          TAKEOVER &nbsp;//&nbsp; マジカルミライ 2026
+          KOTAETE &nbsp;//&nbsp; マジカルミライ 2026
         </p>
       </div>
 
       {/* Status */}
       <div className="flex items-center gap-2 font-mono text-xs tracking-widest">
         <motion.span
-          className="inline-block w-1.5 h-1.5 rounded-full bg-green-400"
+          className="inline-block w-1.5 h-1.5 rounded-full bg-white/70"
           animate={{ opacity: [1, 0.3, 1] }}
           transition={{ duration: 1.2, repeat: Infinity }}
         />
-        <span className="text-green-400/70">SYSTEM READY</span>
+        <span className="text-white/50">SYSTEM READY</span>
       </div>
 
       {/* Start button */}
       <motion.button
         onClick={onStart}
-        className="font-mono text-cyan-400 border border-cyan-400/50 px-10 py-4 text-base tracking-[0.25em] uppercase cursor-pointer"
+        className="font-mono text-white/80 border border-white/25 px-10 py-4 text-base tracking-[0.25em] uppercase cursor-pointer"
         whileHover={{
           scale: 1.04,
-          borderColor: "rgba(34,211,238,0.9)",
+          borderColor: "rgba(255,255,255,0.7)",
           color: "rgba(255,255,255,1)",
         }}
         whileTap={{ scale: 0.96 }}
         animate={{
           boxShadow: [
-            "0 0 8px rgba(34,211,238,0.15)",
-            "0 0 28px rgba(34,211,238,0.45)",
-            "0 0 8px rgba(34,211,238,0.15)",
+            "0 0 8px rgba(255,255,255,0.06)",
+            "0 0 28px rgba(255,255,255,0.18)",
+            "0 0 8px rgba(255,255,255,0.06)",
           ],
         }}
         transition={{
-          boxShadow: { duration: 2.2, repeat: Infinity, ease: "easeInOut" },
+          boxShadow: { duration: 2.8, repeat: Infinity, ease: "easeInOut" },
         }}
       >
-        [ INITIALIZE TAKEOVER ]
+        [ TOUCH TO ANSWER ]
       </motion.button>
 
       {/* Hint */}
@@ -179,7 +179,7 @@ function MinimalHUD({
   return (
     <div className="flex flex-col items-center gap-3">
       {/* Info row */}
-      <div className="flex gap-6 font-mono text-xs text-white/30 tracking-wider">
+      <div className="flex gap-6 font-mono text-xs text-white/25 tracking-wider">
         <span>{posSeconds}s</span>
         <span>VOC {ampPct}%</span>
         <span>{isPlaying ? "▶ PLAYING" : "⏸ PAUSED"}</span>
@@ -189,14 +189,14 @@ function MinimalHUD({
       <div className="flex gap-3">
         <button
           onClick={isPlaying ? onPause : onPlay}
-          className="font-mono text-xs text-cyan-400 border border-cyan-400/40 px-5 py-2 tracking-widest hover:border-cyan-400 hover:text-white transition-colors"
+          className="font-mono text-xs text-white/60 border border-white/20 px-5 py-2 tracking-widest hover:border-white/50 hover:text-white transition-colors"
         >
           {isPlaying ? "⏸ PAUSE" : "▶ PLAY"}
         </button>
         <button
           onClick={onStop}
           disabled={!isPlaying}
-          className="font-mono text-xs text-white/30 border border-white/10 px-5 py-2 tracking-widest hover:border-white/30 hover:text-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="font-mono text-xs text-white/25 border border-white/10 px-5 py-2 tracking-widest hover:border-white/25 hover:text-white/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           ⏹ STOP
         </button>
@@ -217,9 +217,6 @@ export default function PlayerUI({
   onPause,
   onStop,
 }: PlayerUIProps) {
-  // Animated progress for the "loading" phase only (5% → 75% over 4.5 s).
-  // idle/ready values are derived directly from status during render to avoid
-  // synchronous setState-in-effect (react-hooks/set-state-in-effect).
   const [loadingProgress, setLoadingProgress] = useState(5);
 
   useEffect(() => {
@@ -235,7 +232,6 @@ export default function PlayerUI({
     return () => clearInterval(id);
   }, [status]);
 
-  // Derive the displayed progress without synchronous setState in effect
   const progress =
     status === "ready" ? 100 : status === "idle" ? 5 : loadingProgress;
 
@@ -247,20 +243,20 @@ export default function PlayerUI({
           <motion.div
             key="overlay"
             className="absolute inset-0 z-30 flex items-center justify-center"
-            style={{ background: "rgba(0,0,5,0.82)", backdropFilter: "blur(2px)" }}
+            style={{ background: "rgba(0,0,5,0.78)", backdropFilter: "blur(3px)" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{
               opacity: 0,
-              transition: { duration: 1.0, ease: "easeInOut" },
+              transition: { duration: 1.2, ease: "easeInOut" },
             }}
           >
-            {/* Scan-line overlay for cyberpunk texture */}
+            {/* Subtle prismatic scan-line overlay */}
             <div
               className="pointer-events-none absolute inset-0"
               style={{
                 backgroundImage:
-                  "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.015) 2px, rgba(0,255,255,0.015) 4px)",
+                  "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 4px)",
               }}
             />
 
