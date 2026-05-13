@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Player, IPlayerApp } from "textalive-app-api";
-import { SONG_URL } from "@/lib/constants";
 
 export type PlayerStatus = "idle" | "loading" | "ready" | "playing" | "paused";
 
@@ -48,7 +47,15 @@ export function useTextAlive(): TextAliveState {
       onAppReady(app: IPlayerApp) {
         if (!app.managed) {
           setStatus("loading");
-          player.createFromSongUrl(SONG_URL);
+          player.createFromSongUrl("https://piapro.jp/t/6W2N/20251215164617", {
+            video: {
+              beatId: 4827293,
+              chordId: 2963754,
+              repetitiveSegmentId: 3086261,
+              lyricId: 126519,
+              lyricDiffId: 28645,
+            },
+          });
         }
       },
 
