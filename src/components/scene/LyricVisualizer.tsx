@@ -6,10 +6,6 @@ import { Text } from "@react-three/drei";
 import { Group, MathUtils, Color } from "three";
 import { LYRIC_FONT_URL, LYRIC_FONT_SIZE, LYRIC_ANIM_SPEED } from "@/lib/constants";
 
-// Preload the font eagerly to avoid first-render stutter
-// Text.preload is a static method not reflected in the ForwardRef type
-(Text as unknown as { preload: (url: string) => void }).preload(LYRIC_FONT_URL);
-
 // HDR color constants for strong Bloom response (values > 1 pass Bloom threshold)
 const NORMAL_COLOR = new Color(0, 1.8, 2.5);   // HDR cyan
 const CHORUS_COLOR = new Color(2.8, 0.1, 2.8); // HDR magenta
