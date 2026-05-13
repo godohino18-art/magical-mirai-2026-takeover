@@ -6,9 +6,9 @@ import { Text } from "@react-three/drei";
 import { Group, MathUtils, Color } from "three";
 import { LYRIC_FONT_URL, LYRIC_FONT_SIZE, LYRIC_ANIM_SPEED } from "@/lib/constants";
 
-// HDR color constants for strong Bloom response (values > 1 pass Bloom threshold)
-const NORMAL_COLOR = new Color(0, 1.8, 2.5);   // HDR cyan
-const CHORUS_COLOR = new Color(2.8, 0.1, 2.8); // HDR magenta
+// HDR colors: warm white (default) → gold (chorus)
+const NORMAL_COLOR = new Color(1.6, 1.5, 1.2);  // HDR warm white
+const CHORUS_COLOR = new Color(2.5, 1.8, 0.4);  // HDR gold
 
 interface LyricVisualizerProps {
   currentLyric: string;
@@ -17,7 +17,8 @@ interface LyricVisualizerProps {
 
 interface AnimState {
   scale: number;
-  z: number;
+  yOffset: number;   // float up from -0.4 → 0
+  opacity: number;   // fade in from 0 → 1
   chorusBlend: number;
 }
 
@@ -26,15 +27,16 @@ export default function LyricVisualizer({ currentLyric, isChorus }: LyricVisuali
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const textRef = useRef<any>(null);
   const prevLyricRef = useRef("");
-  const anim = useRef<AnimState>({ scale: 0.05, z: -4, chorusBlend: 0 });
+  const anim = useRef<AnimState>({ scale: 0.01, yOffset: -0.4, opacity: 0, chorusBlend: 0 });
   const lerpedColor = useRef(NORMAL_COLOR.clone());
 
-  // Reset animation when lyric changes
+  // Trigger enter animation on lyric change
   useEffect(() => {
     if (currentLyric !== prevLyricRef.current) {
       prevLyricRef.current = currentLyric;
-      anim.current.scale = 0.05;
-      anim.current.z = -4;
+      anim.current.scale = 0.01;
+      anim.current.yOffset = -0.4;
+      anim.current.opacity = 0;
     }
   }, [currentLyric]);
 
@@ -44,24 +46,29 @@ export default function LyricVisualizer({ currentLyric, isChorus }: LyricVisuali
     const k = 1 - Math.exp(-LYRIC_ANIM_SPEED * delta);
     const state = anim.current;
 
-    // Fly-in: scale from 0.05 → 1, z from -4 → 0
+    // Scale pop-in
     state.scale = MathUtils.lerp(state.scale, currentLyric ? 1 : 0, k);
-    state.z = MathUtils.lerp(state.z, 0, k * 0.7);
+    // Rise from below
+    state.yOffset = MathUtils.lerp(state.yOffset, 0, k * 0.5);
+    // Fade in
+    state.opacity = MathUtils.lerp(state.opacity, currentLyric ? 1 : 0, k * 0.8);
 
     groupRef.current.scale.setScalar(state.scale);
-    groupRef.current.position.z = state.z;
+    groupRef.current.position.y = 0.5 + state.yOffset;
 
-    // Smooth chorus color blend
+    // Chorus color blend
     state.chorusBlend = MathUtils.lerp(
       state.chorusBlend,
       isChorus ? 1 : 0,
       1 - Math.exp(-3 * delta)
     );
 
-    // Update text material color in HDR space
     if (textRef.current?.material) {
+      const mat = textRef.current.material;
+      mat.transparent = true;
+      mat.opacity = state.opacity;
       lerpedColor.current.copy(NORMAL_COLOR).lerp(CHORUS_COLOR, state.chorusBlend);
-      textRef.current.material.color = lerpedColor.current;
+      mat.color = lerpedColor.current;
     }
   });
 
@@ -77,10 +84,7 @@ export default function LyricVisualizer({ currentLyric, isChorus }: LyricVisuali
         anchorY="middle"
         maxWidth={12}
         textAlign="center"
-        color="#00ccff"
         sdfGlyphSize={64}
-        outlineWidth={0.02}
-        outlineColor="#000033"
         depthOffset={-1}
       >
         {currentLyric}

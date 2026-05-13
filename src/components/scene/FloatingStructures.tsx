@@ -2,12 +2,10 @@
 
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Mesh, Group } from "three";
-import { ElectronicMaterial } from "@/components/effects/ElectronicMaterial";
+import { Mesh, Group, MathUtils } from "three";
 import { STRUCTURE_COUNT } from "@/lib/constants";
 
 // Generated once at module load — stable random data, no useMemo needed.
-// Moving Math.random() here avoids react-hooks/purity violations.
 interface StructureData {
   id: number;
   position: [number, number, number];
@@ -58,14 +56,25 @@ function Structure({
   shapeIndex,
 }: StructureProps) {
   const meshRef = useRef<Mesh>(null);
+  const chorusSpeedRef = useRef(0);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     if (!meshRef.current) return;
     const t = clock.getElapsedTime();
-    meshRef.current.rotation.x += rotationSpeed[0] * 0.01;
-    meshRef.current.rotation.y += rotationSpeed[1] * 0.01;
-    meshRef.current.rotation.z += rotationSpeed[2] * 0.005;
+
+    // Chorus: smoothly increase rotation speed to scatter light
+    chorusSpeedRef.current = MathUtils.lerp(
+      chorusSpeedRef.current,
+      isChorus ? 1 : 0,
+      1 - Math.exp(-2 * delta)
+    );
+    const speedMult = 1 + chorusSpeedRef.current * 2.5;
+
+    meshRef.current.rotation.x += rotationSpeed[0] * 0.01 * speedMult;
+    meshRef.current.rotation.y += rotationSpeed[1] * 0.01 * speedMult;
+    meshRef.current.rotation.z += rotationSpeed[2] * 0.005 * speedMult;
     meshRef.current.position.y = position[1] + Math.sin(t * 0.5 + position[0]) * 0.4;
+
     const targetScale = scale * (1 + beat * 0.25 + amplitude * 0.1 + (isChorus ? 0.3 : 0));
     meshRef.current.scale.setScalar(
       meshRef.current.scale.x + (targetScale - meshRef.current.scale.x) * 0.15
@@ -84,7 +93,14 @@ function Structure({
   return (
     <mesh ref={meshRef} position={position} scale={scale}>
       {geometry}
-      <ElectronicMaterial amplitude={amplitude} beat={beat} isChorus={isChorus} />
+      <meshPhysicalMaterial
+        transmission={1.0}
+        thickness={2.0}
+        roughness={0.1}
+        metalness={0.1}
+        ior={1.5}
+        transparent
+      />
     </mesh>
   );
 }

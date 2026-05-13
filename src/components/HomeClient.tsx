@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import PlayerUI from "./PlayerUI";
-import GlitchOverlay from "./effects/GlitchOverlay";
 import { useTextAlive } from "@/hooks/useTextAlive";
 
 // R3F Canvas は SSR 非対応のため dynamic import で無効化
@@ -44,7 +43,6 @@ export default function HomeClient() {
         currentLyric={currentLyric}
         introComplete={hasStarted}
       />
-      <GlitchOverlay amplitude={normalizedAmplitude} isChorus={isChorus} />
       <PlayerUI
         status={status}
         isPlaying={isPlaying}

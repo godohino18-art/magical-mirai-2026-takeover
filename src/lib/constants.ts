@@ -48,6 +48,6 @@ export const CAMERA_TRANSITION_DURATION = 2.8;
 // ---- Lyric Visualizer ----
 // jsDelivr CDN: stable URL for Noto Sans JP Bold (full CJK coverage)
 export const LYRIC_FONT_URL =
-  "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5.0.3/files/noto-sans-jp-japanese-700-normal.woff2";
+  "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-jp@5.0.3/files/noto-serif-jp-japanese-700-normal.woff2";
 export const LYRIC_FONT_SIZE = 0.9;
 export const LYRIC_ANIM_SPEED = 10;

@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { EffectComposer } from "@react-three/postprocessing";
+import { Environment } from "@react-three/drei";
 import {
   BloomEffect,
   ChromaticAberrationEffect,
@@ -27,7 +28,6 @@ import {
 } from "@/lib/constants";
 
 // Module-level singletons: initialized once, mutated every frame via useFrame.
-// Avoids both useMemo immutability violations and ref.current access during render.
 const bloomEffect = new BloomEffect({
   blendFunction: BlendFunction.ADD,
   intensity: BLOOM_INTENSITY,
@@ -98,36 +98,61 @@ export default function CyberVoid({
   currentLyric,
   introComplete,
 }: CyberVoidProps) {
-  const pointLightRef = useRef(null);
+  const upperLightRef = useRef(null);
+  const lowerLightRef = useRef(null);
+  const ambientRef = useRef(null);
 
-  useFrame(() => {
-    if (!pointLightRef.current) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const light = pointLightRef.current as any;
-    const targetR = isChorus ? 1.0 : 0.25;
-    const targetG = isChorus ? 0.0 : 0.5;
-    const targetB = isChorus ? 0.5 : 1.0;
-    light.color.r = MathUtils.lerp(light.color.r, targetR, 0.05);
-    light.color.g = MathUtils.lerp(light.color.g, targetG, 0.05);
-    light.color.b = MathUtils.lerp(light.color.b, targetB, 0.05);
-    light.intensity = 2 + amplitude * 4 + beat * 2;
+  useFrame((_, delta) => {
+    const lerpSpeed = 1 - Math.exp(-2 * delta);
+
+    // Upper point light: cool blue → warm amber
+    if (upperLightRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ul = upperLightRef.current as any;
+      ul.color.r = MathUtils.lerp(ul.color.r, isChorus ? 1.0  : 0.25, lerpSpeed);
+      ul.color.g = MathUtils.lerp(ul.color.g, isChorus ? 0.65 : 0.5,  lerpSpeed);
+      ul.color.b = MathUtils.lerp(ul.color.b, isChorus ? 0.18 : 1.0,  lerpSpeed);
+      ul.intensity = 2 + amplitude * 4 + beat * 2;
+    }
+
+    // Lower point light: cyan → warm orange
+    if (lowerLightRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ll = lowerLightRef.current as any;
+      ll.color.r = MathUtils.lerp(ll.color.r, isChorus ? 1.0  : 0.0,  lerpSpeed);
+      ll.color.g = MathUtils.lerp(ll.color.g, isChorus ? 0.53 : 0.81, lerpSpeed);
+      ll.color.b = MathUtils.lerp(ll.color.b, isChorus ? 0.0  : 1.0,  lerpSpeed);
+    }
+
+    // Ambient: dark blue → dark amber
+    if (ambientRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const al = ambientRef.current as any;
+      al.color.r = MathUtils.lerp(al.color.r, isChorus ? 0.18 : 0.04, lerpSpeed * 0.5);
+      al.color.g = MathUtils.lerp(al.color.g, isChorus ? 0.12 : 0.06, lerpSpeed * 0.5);
+      al.color.b = MathUtils.lerp(al.color.b, isChorus ? 0.02 : 0.19, lerpSpeed * 0.5);
+    }
   });
 
   return (
     <>
       <CameraRig introComplete={introComplete} />
 
-      <ambientLight intensity={0.1} color="#0a1030" />
+      {/* Environment map for glass reflections */}
+      <Environment preset="city" background={false} />
+
+      <ambientLight ref={ambientRef} intensity={0.15} color="#0a1030" />
       <pointLight
-        ref={pointLightRef}
+        ref={upperLightRef}
         position={[0, 10, 0]}
         intensity={2}
         color="#4080ff"
       />
       <pointLight
+        ref={lowerLightRef}
         position={[0, -5, 0]}
         intensity={0.5 + beat * 2}
-        color={isChorus ? "#ff0066" : "#00cfff"}
+        color="#00cfff"
       />
 
       <InfiniteGrid amplitude={amplitude} beat={beat} isChorus={isChorus} />
