@@ -15,6 +15,7 @@ const particleVertexShader = /* glsl */ `
   uniform float uTime;
   uniform float uBeat;
   uniform float uAmplitude;
+  uniform float uLyricActive;
 
   attribute float aSize;
   attribute float aSpeed;
@@ -34,6 +35,9 @@ const particleVertexShader = /* glsl */ `
     float beatPush = uBeat * 2.5;
     vec2 dir = normalize(pos.xz + 0.001);
     pos.xz += dir * beatPush * (1.0 - t);
+
+    // Lyric resonance: particles drift toward Miku (z=-25) when lyrics are active
+    pos.z -= uLyricActive * 10.0 * t;
 
     vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
     float dist = length(mvPos.xyz);
@@ -99,18 +103,21 @@ interface ParticleFieldProps {
   amplitude: number;
   beat: number;
   isChorus?: boolean;
+  hasLyric?: boolean;
 }
 
 export default function ParticleField({
   amplitude,
   beat,
   isChorus = false,
+  hasLyric = false,
 }: ParticleFieldProps) {
   const pointsRef = useRef<Points>(null);
   const matRef = useRef<ShaderMaterial>(null);
   const beatRef = useRef(0);
   const chorusFactorRef = useRef(0);
   const smoothAmpRef = useRef(0);
+  const lyricActiveRef = useRef(0);
 
   const { positions, sizes, speeds, phases } = PARTICLE_BUFFERS;
 
@@ -120,6 +127,7 @@ export default function ParticleField({
       uBeat:         { value: 0 },
       uAmplitude:    { value: 0 },
       uChorusFactor: { value: 0 },
+      uLyricActive:  { value: 0 },
     }),
     []
   );
@@ -143,10 +151,17 @@ export default function ParticleField({
       1 - Math.exp(-CHORUS_COLOR_LERP_SPEED * delta)
     );
 
+    lyricActiveRef.current = MathUtils.lerp(
+      lyricActiveRef.current,
+      hasLyric ? 1 : 0,
+      1 - Math.exp(-3 * delta)
+    );
+
     matRef.current.uniforms.uTime.value         = clock.getElapsedTime();
     matRef.current.uniforms.uBeat.value         = beatRef.current;
     matRef.current.uniforms.uAmplitude.value    = smoothAmpRef.current;
     matRef.current.uniforms.uChorusFactor.value = chorusFactorRef.current;
+    matRef.current.uniforms.uLyricActive.value  = lyricActiveRef.current;
   });
 
   return (

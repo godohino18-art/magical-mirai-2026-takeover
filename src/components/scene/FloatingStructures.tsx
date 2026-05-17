@@ -99,6 +99,8 @@ function Structure({
         roughness={0.1}
         metalness={0.1}
         ior={1.5}
+        iridescence={0.3}
+        iridescenceIOR={1.3}
         transparent
       />
     </mesh>

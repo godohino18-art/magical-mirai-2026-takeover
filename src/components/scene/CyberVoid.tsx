@@ -10,12 +10,13 @@ import {
   VignetteEffect,
   BlendFunction,
 } from "postprocessing";
-import { MathUtils, Vector2 } from "three";
+import { MathUtils, Vector2, BackSide } from "three";
 import InfiniteGrid from "./InfiniteGrid";
 import FloatingStructures from "./FloatingStructures";
 import ParticleField from "./ParticleField";
 import LyricVisualizer from "./LyricVisualizer";
 import CameraRig from "./CameraRig";
+import MikuPresence from "./MikuPresence";
 import {
   BLOOM_INTENSITY,
   BLOOM_THRESHOLD,
@@ -75,8 +76,8 @@ function DynamicEffects({ amplitude, isChorus }: DynamicEffectsProps) {
 
   return (
     <EffectComposer>
-      {/* DoF: focus on lyric position [0, 0.5, 2], blur glass objects and particles */}
-      <DepthOfField target={[0, 0.5, 2]} focalLength={0.025} bokehScale={3} />
+      {/* Shallow DoF: sharp on lyrics [0,0.5,2], blurry on Miku [-25] */}
+      <DepthOfField target={[0, 0.5, 2]} focalLength={0.015} bokehScale={6} />
       <primitive object={bloomEffect} dispose={null} />
       <primitive object={chromaticEffect} dispose={null} />
       <primitive object={vignetteEffect} dispose={null} />
@@ -102,12 +103,12 @@ export default function CyberVoid({
 }: CyberVoidProps) {
   const upperLightRef = useRef(null);
   const lowerLightRef = useRef(null);
-  const ambientRef = useRef(null);
+  const ambientRef    = useRef(null);
 
   useFrame((_, delta) => {
     const lerpSpeed = 1 - Math.exp(-2 * delta);
 
-    // Upper light: teal-aqua (Miku) → warm amber (chorus)
+    // Upper light: Miku teal → warm amber (chorus)
     if (upperLightRef.current) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const ul = upperLightRef.current as any;
@@ -126,7 +127,7 @@ export default function CyberVoid({
       ll.color.b = MathUtils.lerp(ll.color.b, isChorus ? 0.0  : 0.73, lerpSpeed);
     }
 
-    // Ambient: dark Miku-teal → dark amber
+    // Ambient: dark teal → dark amber
     if (ambientRef.current) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const al = ambientRef.current as any;
@@ -140,28 +141,36 @@ export default function CyberVoid({
     <>
       <CameraRig introComplete={introComplete} />
 
-      {/* HDR environment for glass refraction/reflection */}
-      <Environment preset="city" background={false} />
+      {/* Custom dark environment: teal IBL from Miku's direction for glass reflections */}
+      <Environment background={false} resolution={256}>
+        {/* Void base */}
+        <mesh scale={[100, 100, 100]}>
+          <sphereGeometry />
+          <meshBasicMaterial color="#020408" side={BackSide} />
+        </mesh>
+        {/* Miku backlight source — creates teal reflections on glass from -Z direction */}
+        <mesh position={[0, 2, -60]}>
+          <sphereGeometry args={[12, 16, 16]} />
+          <meshBasicMaterial color="#80e8e4" />
+        </mesh>
+        {/* Subtle warm rim from above */}
+        <mesh position={[0, 50, 5]}>
+          <sphereGeometry args={[6, 16, 16]} />
+          <meshBasicMaterial color="#a0c8d8" />
+        </mesh>
+      </Environment>
 
-      {/* Dark Miku-teal ambient base */}
       <ambientLight ref={ambientRef} intensity={0.18} color="#061a12" />
-      <pointLight
-        ref={upperLightRef}
-        position={[0, 10, 0]}
-        intensity={2}
-        color="#20b8a0"
-      />
-      <pointLight
-        ref={lowerLightRef}
-        position={[0, -5, 0]}
-        intensity={0.5 + beat * 2}
-        color="#39c5bb"
-      />
+      <pointLight ref={upperLightRef} position={[0, 10, 0]}  intensity={2}  color="#20b8a0" />
+      <pointLight ref={lowerLightRef} position={[0, -5, 0]}  intensity={0.5 + beat * 2} color="#39c5bb" />
+      {/* Miku backlight: illuminates glass objects from behind with teal */}
+      <pointLight position={[0, 2, -22]} intensity={6} color="#39C5BB" />
 
       <InfiniteGrid amplitude={amplitude} beat={beat} isChorus={isChorus} />
       <FloatingStructures amplitude={amplitude} beat={beat} isChorus={isChorus} />
-      <ParticleField amplitude={amplitude} beat={beat} isChorus={isChorus} />
+      <ParticleField amplitude={amplitude} beat={beat} isChorus={isChorus} hasLyric={!!currentLyric} />
       <LyricVisualizer currentLyric={currentLyric} isChorus={isChorus} />
+      <MikuPresence amplitude={amplitude} />
 
       <DynamicEffects amplitude={amplitude} isChorus={isChorus} />
     </>
