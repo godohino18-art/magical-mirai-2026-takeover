@@ -8,7 +8,6 @@ import {
   BloomEffect,
   ChromaticAberrationEffect,
   VignetteEffect,
-  DepthOfFieldEffect,
   BlendFunction,
 } from "postprocessing";
 import { MathUtils, Vector2, BackSide } from "three";
@@ -17,7 +16,8 @@ import FloatingStructures from "./FloatingStructures";
 import ParticleField from "./ParticleField";
 import LyricVisualizer from "./LyricVisualizer";
 import CameraRig from "./CameraRig";
-import MikuPresence from "./MikuPresence";
+import MikuForeground from "./MikuForeground";
+import VolumetricShafts from "./VolumetricShafts";
 import SceneTitleCard from "./SceneTitleCard";
 import {
   BLOOM_INTENSITY,
@@ -54,23 +54,7 @@ interface DynamicEffectsProps {
 }
 
 function DynamicEffects({ amplitude, isChorus }: DynamicEffectsProps) {
-  const dofRef = useRef<DepthOfFieldEffect | null>(null);
-
   useFrame((_, delta) => {
-    // Focus pull: verse → glass objects (~10 units), chorus → Miku (~38 units from camera)
-    if (dofRef.current?.cocMaterial) {
-      dofRef.current.cocMaterial.worldFocusDistance = MathUtils.lerp(
-        dofRef.current.cocMaterial.worldFocusDistance,
-        isChorus ? 38 : 10,
-        1 - Math.exp(-1.2 * delta)
-      );
-      dofRef.current.cocMaterial.worldFocusRange = MathUtils.lerp(
-        dofRef.current.cocMaterial.worldFocusRange,
-        isChorus ? 8 : 3,
-        1 - Math.exp(-1.2 * delta)
-      );
-    }
-
     const targetBloom = isChorus
       ? BLOOM_INTENSITY * CHORUS_BLOOM_MULTIPLIER
       : BLOOM_INTENSITY + amplitude * 1.5;
@@ -94,7 +78,7 @@ function DynamicEffects({ amplitude, isChorus }: DynamicEffectsProps) {
 
   return (
     <EffectComposer>
-      <DepthOfField ref={dofRef} target={[0, 0.5, 10]} focalLength={0.012} bokehScale={8} />
+      <DepthOfField target={[0, 0.5, -4]} focalLength={0.008} bokehScale={3} />
       <primitive object={bloomEffect} dispose={null} />
       <primitive object={chromaticEffect} dispose={null} />
       <primitive object={vignetteEffect} dispose={null} />
@@ -187,7 +171,8 @@ export default function CyberVoid({
       <FloatingStructures amplitude={amplitude} beat={beat} isChorus={isChorus} />
       <ParticleField amplitude={amplitude} beat={beat} isChorus={isChorus} hasLyric={!!currentLyric} />
       <LyricVisualizer currentLyric={currentLyric} isChorus={isChorus} />
-      <MikuPresence amplitude={amplitude} />
+      <MikuForeground amplitude={amplitude} isChorus={isChorus} />
+      <VolumetricShafts amplitude={amplitude} isChorus={isChorus} />
 
       {/* 3D glass title — loaded async, Suspense prevents waterfall */}
       <Suspense fallback={null}>
