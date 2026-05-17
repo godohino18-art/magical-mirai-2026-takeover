@@ -36,8 +36,16 @@ const particleVertexShader = /* glsl */ `
     vec2 dir = normalize(pos.xz + 0.001);
     pos.xz += dir * beatPush * (1.0 - t);
 
-    // Lyric resonance: particles drift toward Miku (z=-25) when lyrics are active
-    pos.z -= uLyricActive * 10.0 * t;
+    // Lyric vortex: amplitude-scaled pull toward Miku (z=-25) with spiral rotation
+    float vortexStrength = uLyricActive * (0.4 + uAmplitude * 4.5);
+    pos.z -= vortexStrength * 10.0 * t;
+
+    // Spiral: rotate particles around z-axis as they're pulled in
+    float spiralAngle = uTime * vortexStrength * 2.0 * t;
+    float cs = cos(spiralAngle);
+    float sn = sin(spiralAngle);
+    vec2 spiraled = vec2(cs * pos.x - sn * pos.y, sn * pos.x + cs * pos.y);
+    pos.xy = mix(pos.xy, spiraled, vortexStrength * 0.4);
 
     vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
     float dist = length(mvPos.xyz);

@@ -35,40 +35,50 @@ const fragmentShader = /* glsl */ `
     p.y = (vUv.y - 0.5) * 2.0;
 
     // --- Miku silhouette (SDF) ---
-    // Head
     float d = sdCircle(p - vec2(0.0,  0.44), 0.11);
-    // Twin tails (iconic)
     d = min(d, sdBox(p - vec2(-0.25, 0.34), vec2(0.04, 0.23)));
     d = min(d, sdBox(p - vec2( 0.25, 0.34), vec2(0.04, 0.23)));
-    // Neck
     d = min(d, sdBox(p - vec2(0.0,  0.31), vec2(0.03, 0.02)));
-    // Torso
     d = min(d, sdBox(p - vec2(0.0,  0.11), vec2(0.10, 0.16)));
-    // Arms
     d = min(d, sdBox(p - vec2(-0.16, 0.08), vec2(0.03, 0.13)));
     d = min(d, sdBox(p - vec2( 0.16, 0.08), vec2(0.03, 0.13)));
-    // Skirt
     d = min(d, sdBox(p - vec2(0.0, -0.15), vec2(0.14, 0.09)));
-    // Legs
     d = min(d, sdBox(p - vec2(-0.05, -0.38), vec2(0.035, 0.14)));
     d = min(d, sdBox(p - vec2( 0.05, -0.38), vec2(0.035, 0.14)));
-    // Boots
     d = min(d, sdBox(p - vec2(-0.055, -0.55), vec2(0.05, 0.03)));
     d = min(d, sdBox(p - vec2( 0.055, -0.55), vec2(0.05, 0.03)));
 
-    // --- Fresnel-like edge glow ---
-    float edgeGlow  = 1.0 - smoothstep(0.0, 0.022, abs(d));
-    float outerHalo = smoothstep(0.14, 0.0, d) * step(0.0, d);
-    float innerFill = step(d, 0.0) * 0.06;
+    // --- Layered glow ---
+    float edgeGlow  = 1.0 - smoothstep(0.0, 0.020, abs(d));
+    float outerHalo = smoothstep(0.18, 0.0, d) * step(0.0, d);
+    float innerFill = step(d, 0.0) * 0.10;
 
-    // Animated shimmer along silhouette boundary
+    // Chromatic split: warm/cool lateral offsets at edges — glass prism metaphor
+    float dWarm = abs(d + 0.008);
+    float dCool = abs(d - 0.008);
+    float chromR = 1.0 - smoothstep(0.0, 0.025, dWarm);
+    float chromB = 1.0 - smoothstep(0.0, 0.025, dCool);
+    vec3 warmTint = vec3(0.4, 0.9, 0.8);
+    vec3 coolTint = vec3(0.1, 0.7, 1.0);
+
+    // Energy flow lines along silhouette boundary
+    float energySpeed = uTime * 3.2;
+    float line1 = pow(max(0.0, sin(p.y * 24.0 - energySpeed) * 0.5 + 0.5), 5.0);
+    float line2 = pow(max(0.0, sin(p.y * 16.0 - energySpeed * 0.65 + 1.4) * 0.5 + 0.5), 3.0);
+    float energyMask = smoothstep(0.015, 0.0, abs(d));
+    float energy = (line1 * 0.7 + line2 * 0.4) * energyMask;
+
+    // Shimmer
     float shimmer     = sin(uTime * 2.2 + p.y * 14.0) * 0.5 + 0.5;
-    float edgeShimmer = edgeGlow * shimmer * 0.35;
+    float edgeShimmer = edgeGlow * shimmer * 0.28;
 
     vec3 mikuColor = vec3(0.224, 0.773, 0.733);  // #39C5BB
-    vec3 col = mikuColor * (edgeGlow * 3.0 + outerHalo * 0.6 + edgeShimmer);
+    vec3 col = mikuColor * (edgeGlow * 3.0 + outerHalo * 0.6)
+             + warmTint * chromR * 0.5 + coolTint * chromB * 0.5
+             + mikuColor * energy * 1.8
+             + mikuColor * edgeShimmer;
 
-    float alpha = (edgeGlow * 0.95 + outerHalo * 0.22 + innerFill) * uPulse;
+    float alpha = (edgeGlow * 0.95 + outerHalo * 0.25 + innerFill + energy * 0.5) * uPulse;
 
     if (alpha < 0.005) discard;
     gl_FragColor = vec4(col, alpha);
@@ -87,17 +97,31 @@ export default function MikuPresence({ amplitude }: MikuPresenceProps) {
   useFrame(({ clock }) => {
     if (!matRef.current || !meshRef.current) return;
     const t = clock.getElapsedTime();
-    // Pulse: base 0.65 + breathing sine + vocal amplitude
     const pulse = 0.65 + Math.sin(t * 1.5) * 0.05 + amplitude * 0.35;
     matRef.current.uniforms.uPulse.value = pulse;
     matRef.current.uniforms.uTime.value  = t;
-    // Subtle scale breath
     const scalePulse = 1.0 + Math.sin(t * 1.2) * 0.008 + amplitude * 0.012;
     meshRef.current.scale.setScalar(scalePulse);
   });
 
   return (
     <Billboard position={[0, 1, -25]}>
+      {/* Glass refraction layer: physical transmission distorts the void environment */}
+      <mesh position={[0, 0, -0.1]}>
+        <planeGeometry args={[4, 9]} />
+        <meshPhysicalMaterial
+          transmission={0.92}
+          thickness={1.5}
+          roughness={0.04}
+          metalness={0}
+          ior={1.45}
+          transparent
+          opacity={0.07}
+          color="#39C5BB"
+          depthWrite={false}
+        />
+      </mesh>
+      {/* Ghost shader: SDF silhouette with chromatic split and energy flow lines */}
       <mesh ref={meshRef}>
         <planeGeometry args={[3, 7.5]} />
         <shaderMaterial

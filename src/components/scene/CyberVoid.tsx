@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, Suspense } from "react";
 import { useFrame } from "@react-three/fiber";
 import { EffectComposer, DepthOfField } from "@react-three/postprocessing";
 import { Environment } from "@react-three/drei";
@@ -8,6 +8,7 @@ import {
   BloomEffect,
   ChromaticAberrationEffect,
   VignetteEffect,
+  DepthOfFieldEffect,
   BlendFunction,
 } from "postprocessing";
 import { MathUtils, Vector2, BackSide } from "three";
@@ -17,6 +18,7 @@ import ParticleField from "./ParticleField";
 import LyricVisualizer from "./LyricVisualizer";
 import CameraRig from "./CameraRig";
 import MikuPresence from "./MikuPresence";
+import SceneTitleCard from "./SceneTitleCard";
 import {
   BLOOM_INTENSITY,
   BLOOM_THRESHOLD,
@@ -52,7 +54,23 @@ interface DynamicEffectsProps {
 }
 
 function DynamicEffects({ amplitude, isChorus }: DynamicEffectsProps) {
+  const dofRef = useRef<DepthOfFieldEffect | null>(null);
+
   useFrame((_, delta) => {
+    // Focus pull: verse → glass objects (~10 units), chorus → Miku (~38 units from camera)
+    if (dofRef.current?.cocMaterial) {
+      dofRef.current.cocMaterial.worldFocusDistance = MathUtils.lerp(
+        dofRef.current.cocMaterial.worldFocusDistance,
+        isChorus ? 38 : 10,
+        1 - Math.exp(-1.2 * delta)
+      );
+      dofRef.current.cocMaterial.worldFocusRange = MathUtils.lerp(
+        dofRef.current.cocMaterial.worldFocusRange,
+        isChorus ? 8 : 3,
+        1 - Math.exp(-1.2 * delta)
+      );
+    }
+
     const targetBloom = isChorus
       ? BLOOM_INTENSITY * CHORUS_BLOOM_MULTIPLIER
       : BLOOM_INTENSITY + amplitude * 1.5;
@@ -76,8 +94,7 @@ function DynamicEffects({ amplitude, isChorus }: DynamicEffectsProps) {
 
   return (
     <EffectComposer>
-      {/* Shallow DoF: sharp on lyrics [0,0.5,2], blurry on Miku [-25] */}
-      <DepthOfField target={[0, 0.5, 2]} focalLength={0.015} bokehScale={6} />
+      <DepthOfField ref={dofRef} target={[0, 0.5, 10]} focalLength={0.012} bokehScale={8} />
       <primitive object={bloomEffect} dispose={null} />
       <primitive object={chromaticEffect} dispose={null} />
       <primitive object={vignetteEffect} dispose={null} />
@@ -139,7 +156,7 @@ export default function CyberVoid({
 
   return (
     <>
-      <CameraRig introComplete={introComplete} />
+      <CameraRig introComplete={introComplete} isChorus={isChorus} />
 
       {/* Custom dark environment: teal IBL from Miku's direction for glass reflections */}
       <Environment background={false} resolution={256}>
@@ -171,6 +188,11 @@ export default function CyberVoid({
       <ParticleField amplitude={amplitude} beat={beat} isChorus={isChorus} hasLyric={!!currentLyric} />
       <LyricVisualizer currentLyric={currentLyric} isChorus={isChorus} />
       <MikuPresence amplitude={amplitude} />
+
+      {/* 3D glass title — loaded async, Suspense prevents waterfall */}
+      <Suspense fallback={null}>
+        <SceneTitleCard introComplete={introComplete} hasLyric={!!currentLyric} />
+      </Suspense>
 
       <DynamicEffects amplitude={amplitude} isChorus={isChorus} />
     </>

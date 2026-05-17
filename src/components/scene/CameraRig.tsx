@@ -16,9 +16,11 @@ import {
 interface CameraRigProps {
   /** true once the user has clicked Start — triggers the rush-in transition */
   introComplete: boolean;
+  /** smoothly drifts camera toward Miku during chorus for cinematic focus pull */
+  isChorus: boolean;
 }
 
-export default function CameraRig({ introComplete }: CameraRigProps) {
+export default function CameraRig({ introComplete, isChorus }: CameraRigProps) {
   const orbitAngleRef = useRef(0);
   const transitionStartedRef = useRef(false);
   const transitionStartPosRef = useRef(new Vector3());
@@ -61,6 +63,8 @@ export default function CameraRig({ introComplete }: CameraRigProps) {
 
     const targetX = pointer.x * MOUSE_PARALLAX_STRENGTH;
     const targetY = CAMERA_BASE_Y + pointer.y * MOUSE_PARALLAX_STRENGTH * 0.5;
+    // Chorus: drift 4 units closer to Miku for the focus-pull moment
+    const targetZ = isChorus ? 10 : 14;
 
     if (t < 1) {
       // Hard interpolation from orbit position → normal view
@@ -80,7 +84,7 @@ export default function CameraRig({ introComplete }: CameraRigProps) {
         eased
       );
     } else {
-      // Normal mouse parallax after transition completes
+      // Normal mouse parallax + gentle chorus z-drift
       camera.position.x = MathUtils.lerp(
         camera.position.x,
         targetX,
@@ -90,6 +94,11 @@ export default function CameraRig({ introComplete }: CameraRigProps) {
         camera.position.y,
         targetY,
         MOUSE_PARALLAX_LERP
+      );
+      camera.position.z = MathUtils.lerp(
+        camera.position.z,
+        targetZ,
+        1 - Math.exp(-0.6 * delta)
       );
     }
 
